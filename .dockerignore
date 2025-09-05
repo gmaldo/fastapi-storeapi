@@ -1,0 +1,10 @@
+# .dockerignore
+
+# Git
+.git
+.gitignore
+
+# Virtual environment
+venv/
+__pycache__/
+.vscode/
