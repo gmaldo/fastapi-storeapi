@@ -90,14 +90,15 @@ Añade un nuevo producto a la base de datos.
       'http://127.0.0.1:8000/products/' \
       -H 'accept: application/json' \
       -H 'Content-Type: application/json' \
-      -d '{ 
+      -d 
+      "{
       "name": "Maceta",
       "price": 100,
       "description": "Un Macetero",
       "category": "Bazar",
       "stock": 2,
       "image": "image_string"
-    }'
+    }"
     ```
 
 #### 4. Actualizar un producto
@@ -111,14 +112,15 @@ Actualiza los detalles de un producto existente por su ID.
       'http://127.0.0.1:8000/products/1' \
       -H 'accept: application/json' \
       -H 'Content-Type: application/json' \
-      -d '{ 
+      -d 
+      "{
       "name": "Maceta de Lujo",
       "price": 150,
       "description": "Un Macetero premium",
       "category": "Bazar",
       "stock": 5,
       "image": "image_string"
-    }'
+    }"
     ```
 
 
@@ -131,3 +133,20 @@ Elimina un producto de la base de datos por su ID.
     ```bash
     curl -X DELETE http://127.0.0.1:8000/products/1
     ```
+
+## 🐳 Ejecución alternativa con Docker
+
+Si prefieres ejecutar la aplicación en un entorno contenedorizado, puedes usar Docker.
+
+1.  **Construye la imagen de Docker:**
+    Asegúrate de tener Docker instalado y en ejecución. Luego, desde la raíz del proyecto, ejecuta el siguiente comando para construir la imagen:
+    ```bash
+    docker build -t fastapi-storeapi .
+    ```
+
+2.  **Ejecuta el contenedor de Docker:**
+    Una vez que la imagen se haya construido correctamente, puedes iniciar un contenedor con el siguiente comando:
+    ```bash
+    docker run -d -p 8000:8000 --name my-fastapi-app fastapi-storeapi
+    ```
+    La API estará disponible en `http://localhost:8000`.

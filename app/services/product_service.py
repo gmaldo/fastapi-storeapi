@@ -21,4 +21,4 @@ class ProductService:
         return self.repository.update_product(db,product_id, product)
 
     def delete_product(self, db: Session, product_id: int):
-        return self.repository.delete_product(db,hero_id)
+        return self.repository.delete_product(db,product_id)
