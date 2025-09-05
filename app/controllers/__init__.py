@@ -1,0 +1,1 @@
+from app.controllers.product_controllers import router as product_router
