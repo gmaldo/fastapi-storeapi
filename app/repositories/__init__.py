@@ -1,1 +1,6 @@
 from app.repositories.product_repository import ProductRepository
+from app.repositories.user_repository import UserRepository
+from app.repositories.cart_repository import CartRepository
+from app.repositories.cart_item_repository  import CartItemRepository
+from app.repositories.order_repository import OrderRepository
+from app.repositories.order_item_repository import OrderItemRepository
