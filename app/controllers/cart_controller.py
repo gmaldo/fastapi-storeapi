@@ -154,73 +154,13 @@ def remove_product_from_cart(
 @router.post("/purchase")
 def purchase_cart(user_id: int, db: Session = Depends(get_db)):
     """
-    Procesar compra del carrito: crear orden y descontar stock
+    Procesar compra del carrito: crear orden, reducir stock y vaciar carrito
     """
     try:
-        # 1. Validar carrito antes del checkout
-        cart_validation = cart_service.validate_cart_for_checkout(db, user_id)
-        
-        if not cart_validation["valid"]:
-            return {
-                "success": False,
-                "message": "No se pudo procesar la orden",
-                "details": "Cart validation failed"
-            }
-        
-        # 2. Obtener detalles del carrito
-        cart_details = cart_service.get_cart_with_product_details(db, user_id)
-        
-        if not cart_details["items"]:
-            return {
-                "success": False,
-                "message": "No se pudo procesar la orden",
-                "details": "Cart is empty"
-            }
-        
-        # 3. Verificar stock nuevamente y preparar items para la orden
-        order_items_data = []
-        total_amount = 0.0
-        
-        for item in cart_details["items"]:
-            product = item["product"]
-            
-            # Verificar stock disponible
-            if product["stock"] < item["quantity"]:
-                return {
-                    "success": False,
-                    "message": "No se pudo procesar la orden",
-                    "details": f"Insufficient stock for {product['name']}. Available: {product['stock']}, Requested: {item['quantity']}"
-                }
-            
-            # Preparar datos para order item
-            order_items_data.append({
-                "product_id": product["id"],
-                "quantity": item["quantity"],
-                "price": product["price"]  # Precio al momento de la compra
-            })
-            
-            total_amount += product["price"] * item["quantity"]
-        
-        # 4. Crear la orden usando OrderService
+        # 1. Crear orden desde el carrito (esto incluye validaciones)
         order_result = order_service.create_order_from_cart(db, user_id)
         
-        if not order_result["success"]:
-            return {
-                "success": False,
-                "message": "No se pudo procesar la orden",
-                "details": "Failed to create order"
-            }
-        
-        # TEMPORAL: Simulación de creación de orden
-        # new_order = {
-        #     "id": 1,  # Esto vendría del OrderService
-        #     "user_id": user_id,
-        #     "total": total_amount,
-        #     "date": "2024-01-01T00:00:00",
-        #     "status": "pending"
-        # }
-        
-        # 5. Descontar stock de los productos
+        # 2. Reducir stock de todos los productos
         for item_data in order_result["cart_items_processed"]:
             try:
                 product_service.reduce_product_stock(
@@ -229,37 +169,31 @@ def purchase_cart(user_id: int, db: Session = Depends(get_db)):
                     item_data["quantity"]
                 )
             except Exception as stock_error:
-                # Si hay error descontando stock, cancelar orden y revertir
+                # Si hay error reduciendo stock, cancelar orden
                 try:
                     order_service.cancel_order(db, order_result["order"].id)
                 except:
                     pass
-                return {
-                    "success": False,
-                    "message": "No se pudo procesar la orden",
-                    "details": f"Error updating stock: {str(stock_error)}"
-                }
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Error updating stock: {str(stock_error)}"
+                )
         
-        # 6. Limpiar el carrito después de la compra exitosa
+        # 3. Vaciar el carrito después de la compra exitosa
         cart_service.clear_user_cart(db, user_id)
         
         return {
             "success": True,
-            "message": "Order processed successfully",
+            "message": "Purchase completed successfully",
             "order": order_result["order"],
             "items_purchased": order_result["items_count"],
             "total_amount": order_result["total_amount"]
         }
         
-    except HTTPException as he:
-        return {
-            "success": False,
-            "message": "No se pudo procesar la orden",
-            "details": he.detail
-        }
+    except HTTPException:
+        raise
     except Exception as e:
-        return {
-            "success": False,
-            "message": "No se pudo procesar la orden",
-            "details": "Internal server error"
-        }
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing purchase: {str(e)}"
+        )
